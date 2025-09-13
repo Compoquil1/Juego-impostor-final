@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>  
+    <meta charset="UTF-8">
+    <title>Juego del Impostor</title>
+</head>
+<body>
+    <h1>¿Quién es el impostor?</h1>
+
+    <div>
+        <label>Nombre del jugador: </label>
+        <input type="text" id="playerName">
+        <button onclick="addPlayer()">Agregar jugador</button>
+        <button onclick="startGame()">Empezar</button>
+    </div>
+
+    <div id="playersList"></div>
+    <div id="gameArea" style="display:none; margin-top:20px;">
+        <h2>Roles asignados</h2>
+        <ul id="assignedRoles"></ul>
+    </div>
+
+    <script>
+        const characters = ["Iron Man", "Goku", "Messi", "Hornet", "Naruto", "Batman"];
+        let players = [];
+        let roles = {};
+        let impostorIndex;
+        let commonCharacter;
+
+        function addPlayer() {
+            const nameInput = document.getElementById("playerName");
+            const name = nameInput.value.trim();
+
+            if (name === "") {
+                alert("El nombre no puede estar vacío.");
+                return;
+            }
+
+            if (players.length >= 5) {
+                alert("Máximo 5 jugadores.");
+                return;
+            }
+
+            players.push(name);
+            document.getElementById("playersList").innerHTML =
+                "<p>Jugadores: " + players.join(", ") + "</p>";
+
+            nameInput.value = "";
+        }
+
+        function startGame() {
+            if (players.length !== 5) {
+                alert("Necesitas exactamente 5 jugadores.");
+                return;
+            }
+
+            // Elegir un personaje común
+            commonCharacter = characters[Math.floor(Math.random() * characters.length)];
+
+            // Elegir impostor
+            impostorIndex = Math.floor(Math.random() * players.length);
+
+            // Asignar roles
+            roles = {};
+            players.forEach((player, index) => {
+                if (index === impostorIndex) {
+                    roles[player] = "Eres el IMPOSTOR";
+                } else {
+                    roles[player] = "Tu personaje es: " + commonCharacter;
+                }
+            });
+
+            // Mostrar botones para que cada jugador vea su rol
+            const list = document.getElementById("assignedRoles");
+            list.innerHTML = "";
+            players.forEach(player => {
+                const li = document.createElement("li");
+                li.innerHTML = player + 
+                    ' <button onclick="revealRole(\'' + player + '\', this)">Ver mi rol</button>' +
+                    ' <span style="margin-left:10px; font-weight:bold;"></span>';
+                list.appendChild(li);
+            });
+
+            document.getElementById("gameArea").style.display = "block";
+        }
+
+        function revealRole(player, button) {
+            const span = button.nextElementSibling;
+            span.textContent = roles[player];
+            button.disabled = true; // desactivar botón para que no lo toquen de nuevo
+        }
+    </script>
+</body>
+</html>
