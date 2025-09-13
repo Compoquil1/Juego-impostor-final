@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>  
+<head>
     <meta charset="UTF-8">
-    <title>Juego del Impostor</title>
+    <title>Juego del Impostor - Multiplayer</title>
+    <!-- Firebase App (core) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <!-- Firebase Realtime Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <h1>¿Quién es el impostor?</h1>
@@ -11,83 +15,81 @@
         <label>Nombre del jugador: </label>
         <input type="text" id="playerName">
         <button onclick="addPlayer()">Agregar jugador</button>
-        <button onclick="startGame()">Empezar</button>
+        <button onclick="startGame()">Empezar juego</button>
     </div>
 
     <div id="playersList"></div>
+
     <div id="gameArea" style="display:none; margin-top:20px;">
         <h2>Roles asignados</h2>
         <ul id="assignedRoles"></ul>
     </div>
 
     <script>
+        // === Configuración Firebase con tu URL ===
+        const firebaseConfig = {
+            databaseURL: "https://juegoimpostor-c51de-default-rtdb.firebaseio.com/"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // === Juego ===
         const characters = ["Iron Man", "Goku", "Messi", "Hornet", "Naruto", "Batman"];
         let players = [];
         let roles = {};
-        let impostorIndex;
         let commonCharacter;
+        let impostorIndex;
 
         function addPlayer() {
             const nameInput = document.getElementById("playerName");
             const name = nameInput.value.trim();
 
-            if (name === "") {
-                alert("El nombre no puede estar vacío.");
-                return;
-            }
-
-            if (players.length >= 5) {
-                alert("Máximo 5 jugadores.");
-                return;
-            }
+            if (name === "") { alert("El nombre no puede estar vacío."); return; }
+            if (players.includes(name)) { alert("Ese nombre ya existe."); return; }
 
             players.push(name);
             document.getElementById("playersList").innerHTML =
                 "<p>Jugadores: " + players.join(", ") + "</p>";
-
             nameInput.value = "";
         }
 
         function startGame() {
-            if (players.length !== 5) {
-                alert("Necesitas exactamente 5 jugadores.");
-                return;
-            }
+            if (players.length !== 5) { alert("Necesitas exactamente 5 jugadores."); return; }
 
-            // Elegir un personaje común
+            // Elegir personaje común y impostor
             commonCharacter = characters[Math.floor(Math.random() * characters.length)];
-
-            // Elegir impostor
             impostorIndex = Math.floor(Math.random() * players.length);
 
-            // Asignar roles
             roles = {};
             players.forEach((player, index) => {
-                if (index === impostorIndex) {
-                    roles[player] = "Eres el IMPOSTOR";
-                } else {
-                    roles[player] = "Tu personaje es: " + commonCharacter;
-                }
+                roles[player] = index === impostorIndex ? "Eres el IMPOSTOR" : "Tu personaje es: " + commonCharacter;
             });
 
-            // Mostrar botones para que cada jugador vea su rol
-            const list = document.getElementById("assignedRoles");
-            list.innerHTML = "";
-            players.forEach(player => {
-                const li = document.createElement("li");
-                li.innerHTML = player + 
-                    ' <button onclick="revealRole(\'' + player + '\', this)">Ver mi rol</button>' +
-                    ' <span style="margin-left:10px; font-weight:bold;"></span>';
-                list.appendChild(li);
-            });
-
-            document.getElementById("gameArea").style.display = "block";
+            // Guardar roles en Firebase
+            database.ref('juego').set({ roles });
         }
 
+        // Escuchar roles en tiempo real
+        database.ref('juego/roles').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            roles = data;
+            const list = document.getElementById("assignedRoles");
+            list.innerHTML = "";
+            Object.keys(roles).forEach(player => {
+                const li = document.createElement("li");
+                li.innerHTML = player +
+                    ' <button onclick="revealRole(\'' + player + '\', this)">Ver mi rol</button>';
+                list.appendChild(li);
+            });
+            document.getElementById("gameArea").style.display = "block";
+        });
+
         function revealRole(player, button) {
-            const span = button.nextElementSibling;
-            span.textContent = roles[player];
-            button.disabled = true; // desactivar botón para que no lo toquen de nuevo
+            alert(roles[player]); // Muestra solo al jugador su rol
+            button.disabled = true;
         }
     </script>
 </body>
