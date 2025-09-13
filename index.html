@@ -16,6 +16,7 @@
         <input type="text" id="playerName">
         <button onclick="addPlayer()">Agregar jugador</button>
         <button onclick="startGame()">Empezar juego</button>
+        <button onclick="resetGame()">Reiniciar juego</button>
     </div>
 
     <div id="playersList"></div>
@@ -67,6 +68,25 @@
             });
 
             // Guardar roles en Firebase
+            database.ref('juego').set({ roles });
+        }
+
+        function resetGame() {
+            if (players.length !== 5) {
+                alert("Necesitas exactamente 5 jugadores para reiniciar.");
+                return;
+            }
+
+            // Elegir nuevo personaje común y nuevo impostor
+            commonCharacter = characters[Math.floor(Math.random() * characters.length)];
+            impostorIndex = Math.floor(Math.random() * players.length);
+
+            roles = {};
+            players.forEach((player, index) => {
+                roles[player] = index === impostorIndex ? "Eres el IMPOSTOR" : "Tu personaje es: " + commonCharacter;
+            });
+
+            // Guardar los nuevos roles en Firebase
             database.ref('juego').set({ roles });
         }
 
